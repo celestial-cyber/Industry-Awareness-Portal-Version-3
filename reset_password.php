@@ -35,8 +35,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // If user clicked "Continue without changing" on first login
     if ($action === 'skip' && $is_first_login) {
-        // Mark password as viewed but not changed (if they want to skip)
-        header("Location: student_dashboard.php");
+        // Check if there's a selected session to redirect to quiz
+        if (isset($_GET['session'])) {
+            header("Location: quiz.php?session_id=" . intval($_GET['session']));
+        } else {
+            header("Location: student_dashboard.php");
+        }
         exit();
     }
     
@@ -61,13 +65,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("si", $hashed_password, $_SESSION['student_id']);
             
             if ($stmt->execute()) {
-                $success_message = "Password changed successfully! Redirecting to dashboard...";
+                $success_message = "Password changed successfully! Redirecting...";
                 $_SESSION['is_password_changed'] = TRUE;
+                
+                // Check if there's a selected session to redirect to quiz
+                $redirect_url = 'student_dashboard.php';
+                if (isset($_GET['session'])) {
+                    $redirect_url = 'quiz.php?session_id=' . intval($_GET['session']);
+                }
                 
                 // Redirect after 2 seconds
                 echo "<script>
                     setTimeout(function() {
-                        window.location.href = 'student_dashboard.php';
+                        window.location.href = '" . $redirect_url . "';
                     }, 2000);
                 </script>";
             } else {

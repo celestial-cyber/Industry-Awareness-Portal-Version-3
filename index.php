@@ -57,15 +57,18 @@ $sql = 'INSERT IGNORE INTO IAP_users_details (username, password, role) VALUES (
 $conn->query($sql);
 
 $sessions = [];
+$sessions_with_ids = [];
 for ($year = 1; $year <= 4; $year++) {
-    $sql = "SELECT topic FROM sessions WHERE year = ? ORDER BY created_at DESC";
+    $sql = "SELECT id, topic FROM sessions WHERE year = ? ORDER BY created_at DESC";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $year);
     $stmt->execute();
     $result = $stmt->get_result();
     $sessions[$year] = [];
+    $sessions_with_ids[$year] = [];
     while ($row = $result->fetch_assoc()) {
         $sessions[$year][] = $row['topic'];
+        $sessions_with_ids[$year][] = $row;
     }
     $stmt->close();
 }
@@ -368,6 +371,73 @@ $conn->close();
     transform:translateY(-3px);
 }
 
+/* Session Context Menu */
+.session-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.session-item:hover {
+    background-color: #f3e8ff;
+}
+
+.session-menu-icon {
+    opacity: 0;
+    cursor: pointer;
+    font-weight: bold;
+    color: #7c3aed;
+    transition: opacity 0.2s;
+}
+
+.session-item:hover .session-menu-icon {
+    opacity: 1;
+}
+
+/* Context Menu Styles */
+.session-context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    min-width: 200px;
+    display: none;
+}
+
+.session-context-menu.show {
+    display: block;
+}
+
+.session-context-menu-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s;
+}
+
+.session-context-menu-item:last-child {
+    border-bottom: none;
+}
+
+.session-context-menu-item:hover {
+    background-color: #f3e8ff;
+    color: #7c3aed;
+    font-weight: 600;
+}
+
+.session-context-menu-item i {
+    margin-right: 8px;
+}
+
+
 /* Registration Form */
 .registration-form {
     max-width: 600px;
@@ -512,8 +582,11 @@ $conn->close();
                     <li>Industry Standards, Ethics & Workplace Communication</li>
                     <li>Roles, Responsibilities & Career Pathways in Industry</li>
                     <li>LinkedIn Profile Basics</li>
-                    <?php foreach ($sessions[1] as $session): ?>
-                        <li><?php echo htmlspecialchars($session); ?></li>
+                    <?php foreach ($sessions_with_ids[1] as $session): ?>
+                        <li class="session-item" data-session-id="<?php echo $session['id']; ?>" data-session-topic="<?php echo htmlspecialchars($session['topic']); ?>">
+                            <?php echo htmlspecialchars($session['topic']); ?>
+                            <span class="session-menu-icon" title="Right-click for options">⋮</span>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -535,8 +608,11 @@ $conn->close();
                     <li>Hackathon Success & Learning</li>
                     <li>Time Management, Company Opportunities & Certifications</li>
                   
-                    <?php foreach ($sessions[2] as $session): ?>
-                        <li><?php echo htmlspecialchars($session); ?></li>
+                    <?php foreach ($sessions_with_ids[2] as $session): ?>
+                        <li class="session-item" data-session-id="<?php echo $session['id']; ?>" data-session-topic="<?php echo htmlspecialchars($session['topic']); ?>">
+                            <?php echo htmlspecialchars($session['topic']); ?>
+                            <span class="session-menu-icon" title="Right-click for options">⋮</span>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -557,8 +633,11 @@ $conn->close();
                     <li>Advanced Interview Essentials & Preparation Strategy</li>
                     <li>GitHub Portfolio & Open Source Contribution</li>
                     <li>Managing Academics, Placements & Growth</li>
-                    <?php foreach ($sessions[3] as $session): ?>
-                        <li><?php echo htmlspecialchars($session); ?></li>
+                    <?php foreach ($sessions_with_ids[3] as $session): ?>
+                        <li class="session-item" data-session-id="<?php echo $session['id']; ?>" data-session-topic="<?php echo htmlspecialchars($session['topic']); ?>">
+                            <?php echo htmlspecialchars($session['topic']); ?>
+                            <span class="session-menu-icon" title="Right-click for options">⋮</span>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -579,8 +658,11 @@ $conn->close();
                     <li>Real-World Project Development</li>
                     <li>Personal Branding & Personal Development</li>
                     <li>Alternative Paths & Contingency Planning</li>
-                    <?php foreach ($sessions[4] as $session): ?>
-                        <li><?php echo htmlspecialchars($session); ?></li>
+                    <?php foreach ($sessions_with_ids[4] as $session): ?>
+                        <li class="session-item" data-session-id="<?php echo $session['id']; ?>" data-session-topic="<?php echo htmlspecialchars($session['topic']); ?>">
+                            <?php echo htmlspecialchars($session['topic']); ?>
+                            <span class="session-menu-icon" title="Right-click for options">⋮</span>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -666,9 +748,10 @@ $conn->close();
 
 <!------javascript--------------->
 <script>
+// Toggle session details visibility
 document.querySelectorAll('.toggle-sessions').forEach(button => {
     button.addEventListener('click', () => {
-        const list = button.nextElementSibling; // ONLY the list right after THIS button
+        const list = button.nextElementSibling;
 
         if(list.style.display === 'block'){
             list.style.display = 'none';
@@ -679,7 +762,90 @@ document.querySelectorAll('.toggle-sessions').forEach(button => {
         }
     });
 });
+
+// Context Menu for Session Registration
+const contextMenu = document.createElement('div');
+contextMenu.className = 'session-context-menu';
+contextMenu.innerHTML = `
+    <div class="session-context-menu-item register-for-session">
+        <i class="fas fa-user-plus"></i> Register for this Session
+    </div>
+    <div class="session-context-menu-item view-session-info">
+        <i class="fas fa-info-circle"></i> Session Info
+    </div>
+`;
+document.body.appendChild(contextMenu);
+
+let currentSessionId = null;
+let currentSessionTopic = null;
+
+// Handle right-click on session items
+document.querySelectorAll('.session-item').forEach(item => {
+    item.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        
+        currentSessionId = item.dataset.sessionId;
+        currentSessionTopic = item.dataset.sessionTopic;
+        
+        contextMenu.style.left = e.clientX + 'px';
+        contextMenu.style.top = e.clientY + 'px';
+        contextMenu.classList.add('show');
+    });
+
+    // Also allow clicking the menu icon
+    item.querySelector('.session-menu-icon').addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        currentSessionId = item.dataset.sessionId;
+        currentSessionTopic = item.dataset.sessionTopic;
+        
+        const rect = item.getBoundingClientRect();
+        contextMenu.style.left = rect.right + 'px';
+        contextMenu.style.top = rect.top + 'px';
+        contextMenu.classList.add('show');
+    });
+});
+
+// Handle context menu click
+document.querySelector('.register-for-session').addEventListener('click', () => {
+    contextMenu.classList.remove('show');
+    
+    if (!currentSessionId) return;
+    
+    // Send registration request to server
+    fetch('session_registration.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'session_id=' + currentSessionId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Redirect to login page with session ID
+            window.location.href = data.redirect_url;
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
+
+document.querySelector('.view-session-info').addEventListener('click', () => {
+    contextMenu.classList.remove('show');
+    alert('Session: ' + currentSessionTopic);
+});
+
+// Close context menu when clicking elsewhere
+document.addEventListener('click', () => {
+    contextMenu.classList.remove('show');
+});
 </script>
+
 
 
 

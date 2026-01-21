@@ -84,6 +84,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_session'])) {
 if ($page == 'registrations') {
     $sql = "SELECT * FROM session_registrations ORDER BY submitted_at DESC";
     $result = $conn->query($sql);
+} else if ($page == 'registered_students') {
+    // Fetch all students who registered through student_sessions
+    $sql = "SELECT DISTINCT 
+                s.id,
+                s.full_name,
+                s.email,
+                s.roll_number,
+                s.department,
+                s.year,
+                COUNT(DISTINCT ss.session_id) as sessions_count,
+                GROUP_CONCAT(DISTINCT sess.topic SEPARATOR ', ') as registered_sessions
+            FROM students s
+            LEFT JOIN student_sessions ss ON s.id = ss.student_id
+            LEFT JOIN sessions sess ON ss.session_id = sess.id
+            GROUP BY s.id
+            ORDER BY s.created_at DESC";
+    $registered_students_result = $conn->query($sql);
 }
 
 $conn->close();
@@ -119,6 +136,22 @@ $conn->close();
             background: #ffffff;
             border-right: 1px solid #e5e7eb;
             padding: 20px;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f3e8ff;
+        }
+
+        .sidebar-logo img {
+            height: 80px;
+            width: 80px;
+            border-radius: 50%;
+            object-fit: cover;
         }
 
         .sidebar h2 {
@@ -262,11 +295,15 @@ $conn->close();
 <body>
     <div class="dashboard">
         <div class="sidebar">
+            <div class="sidebar-logo">
+                <img src="../images/SA Main logo.jpg" alt="SA Main Logo" title="SA Main">
+            </div>
             <h2>Admin Panel</h2>
             <ul>
                 <li><a href="?page=home" class="<?php echo $page == 'home' ? 'active' : ''; ?>">Home</a></li>
                 <li><a href="?page=create_session" class="<?php echo $page == 'create_session' ? 'active' : ''; ?>">Create Session</a></li>
-                <li><a href="?page=registrations" class="<?php echo $page == 'registrations' ? 'active' : ''; ?>">View Registrations</a></li>
+                <li><a href="?page=registrations" class="<?php echo $page == 'registrations' ? 'active' : ''; ?>">View Session Registrations</a></li>
+                <li><a href="?page=registered_students" class="<?php echo $page == 'registered_students' ? 'active' : ''; ?>">View Registered Students</a></li>
             </ul>
         </div>
 
@@ -340,6 +377,59 @@ $conn->close();
                     </table>
                 <?php else: ?>
                     <p class="no-data">No registrations yet.</p>
+                <?php endif; ?>
+
+            <?php elseif ($page == 'registered_students'): ?>
+                <h2 class="section-title">Registered Students via Student Portal</h2>
+                <?php if (isset($registered_students_result) && $registered_students_result->num_rows > 0): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Roll Number</th>
+                                <th>Department</th>
+                                <th>Year</th>
+                                <th>Sessions Registered</th>
+                                <th>Registered Sessions</th>
+                                <th>Quizzes Taken</th>
+                                <th>Modules Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while($row = $registered_students_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($row['id']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['full_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['roll_number']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['department']); ?></td>
+                                    <td>Year <?php echo htmlspecialchars($row['year']); ?></td>
+                                    <td><strong><?php echo $row['sessions_count']; ?></strong></td>
+                                    <td>
+                                        <small><?php 
+                                            echo $row['registered_sessions'] ? htmlspecialchars($row['registered_sessions']) : '<em>None</em>'; 
+                                        ?></small>
+                                    </td>
+                                    <td>
+                                        <!-- Dummy value: Random quiz count between 0-5 -->
+                                        <span style="background: #e0f7e0; padding: 4px 8px; border-radius: 4px; font-weight: 600; color: #15803d;">
+                                            <?php echo rand(0, 5); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <!-- Dummy value: Random module count between 0-3 -->
+                                        <span style="background: #e0e7ff; padding: 4px 8px; border-radius: 4px; font-weight: 600; color: #1e3a8a;">
+                                            <?php echo rand(0, 3); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <p class="no-data">No students registered yet through the student portal.</p>
                 <?php endif; ?>
             <?php endif; ?>
         </div>

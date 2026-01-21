@@ -16,15 +16,15 @@ try {
     // Fetch student's registered sessions using MySQLi prepared statement
     $sql = "SELECT 
                 s.id,
-                s.title,
+                s.topic as title,
                 s.year,
-                s.description,
+                '' as description,
                 ss.registration_status,
                 ss.registered_at
             FROM sessions s
             JOIN student_sessions ss ON s.id = ss.session_id
             WHERE ss.student_id = ?
-            ORDER BY s.year ASC, s.title ASC";
+            ORDER BY s.year ASC, s.topic ASC";
     
     $stmt = $conn->prepare($sql);
     
@@ -78,9 +78,64 @@ if (isset($_GET['logout'])) {
         body {
             background: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Navigation */
+        .dashboard-wrapper {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Sidebar */
+        .dashboard-sidebar {
+            width: 200px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            position: fixed;
+            left: 0;
+            top: 70px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .sidebar-logo img {
+            height: 70px;
+            width: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .main-dashboard-content {
+            margin-left: 200px;
+            flex: 1;
+            width: calc(100% - 200px);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-container {
+            padding: 30px 20px;
+            flex: 1;
+        }
+
+        .container-lg {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 20px;
+        }
         .navbar-custom {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -90,21 +145,51 @@ if (isset($_GET['logout'])) {
             font-weight: 700;
             font-size: 20px;
             color: white !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
         }
 
         .navbar-custom .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
             font-weight: 500;
             transition: all 0.3s;
+            white-space: nowrap;
+            padding: 0.5rem 1rem !important;
         }
 
         .navbar-custom .nav-link:hover {
             color: white !important;
         }
 
+        .navbar-nav {
+            gap: 20px;
+            align-items: center;
+        }
+
+        .navbar-nav .nav-item {
+            display: flex;
+            align-items: center;
+        }
+
         .user-info {
             color: rgba(255, 255, 255, 0.9);
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .user-info small {
+            display: block;
+            font-size: 12px;
+            opacity: 0.9;
         }
 
         .user-name {
@@ -115,6 +200,7 @@ if (isset($_GET['logout'])) {
         /* Main Content */
         .dashboard-container {
             padding: 30px 20px;
+            flex: 1;
         }
 
         .welcome-header {
@@ -377,6 +463,15 @@ if (isset($_GET['logout'])) {
         }
 
         @media (max-width: 768px) {
+            .dashboard-sidebar {
+                display: none;
+            }
+
+            .main-dashboard-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
             .welcome-header {
                 padding: 25px 20px;
             }
@@ -400,7 +495,7 @@ if (isset($_GET['logout'])) {
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container-lg">
             <a class="navbar-brand" href="index.php">
-                <i class="fas fa-graduation-cap"></i> IAP Portal
+                IAP Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -408,11 +503,13 @@ if (isset($_GET['logout'])) {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="user-info">
+                        <div class="user-info">
                             <i class="fas fa-user-circle"></i> 
-                            <span class="user-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
-                            <br><small><?php echo htmlspecialchars($_SESSION['roll_number']); ?></small>
-                        </span>
+                            <div>
+                                <div class="user-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></div>
+                                <small><?php echo htmlspecialchars($_SESSION['email']); ?></small>
+                            </div>
+                        </div>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="?logout=1">
@@ -424,8 +521,18 @@ if (isset($_GET['logout'])) {
         </div>
     </nav>
 
+    <!-- Sidebar -->
+    <div class="dashboard-sidebar">
+        <div class="sidebar-logo">
+            <img src="images/SA Main logo.jpg" alt="SA Main Logo" title="SA Main">
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
+            <p style="margin: 0; font-weight: 600;">IAP Portal</p>
+        </div>
+    </div>
+
     <!-- Main Content -->
-    <div class="dashboard-container">
+    <div class="main-dashboard-content">
         <div class="container-lg">
             <!-- Welcome Header -->
             <div class="welcome-header">
